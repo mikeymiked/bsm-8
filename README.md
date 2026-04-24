@@ -9,7 +9,6 @@ It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing v
 ## Files
 
 - `main.py` -- the VM itself. Runs a program file.
-- `assembler.py` -- converts a human-readable `.asm` file into a token file the VM can load.
 
 ## Example program
 
