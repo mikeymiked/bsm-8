@@ -8,21 +8,36 @@ It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing v
 
 ## Files
 
-- `main.py` -- the VM itself. Runs a program file.
+- `main.py` -- the VM itself. Loads and runs a program file.
+- `assembler.py` -- converts `.asm` files with named labels into a program file the VM can load.
+
+## How to run
+
+Write a program in a `.asm` file, assemble it, then run it:
+
+```
+python3 assembler.py myprogram.asm myprogram.txt
+python3 main.py myprogram.txt
+```
 
 ## Example program
 
-This counts down from 5 to 0 and prints the result:
+This counts down from 5 to 0 and prints each value:
 
 ```
 PUSH 5
-JM0  9
+loop:
+JM0  done
+DUP
+PRINT
 PUSH 1
 SUB
-JMP  2
-PRINT
+JMP  loop
+done:
 HALT
 ```
+
+Labels like `loop:` and `done:` are resolved by the assembler so you do not have to count memory addresses by hand.
 
 ## Instructions
 
