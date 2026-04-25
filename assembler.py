@@ -6,7 +6,9 @@ labels = {}
 opcodes = ['PUSH', 'POP', 'DUP', 'ADD', 'SUB', 'MUL', 'JMP', 'JM0', 'HALT', 'PRINT', 'STORE', 'LOAD']
 
 with open(sys.argv[1], 'r') as file:
-    content = file.read().split()
+    content = []
+    for line in file:
+        content.extend(line.split(';')[0].split())
 
     counter = 0
 

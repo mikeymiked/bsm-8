@@ -8,7 +8,7 @@ It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing v
 
 ## Files
 
-- `main.py` -- the VM itself. Loads and runs a program file.
+- `bsm8.py` -- the VM itself. Can be run directly as a script or imported as a library into other Python programs.
 - `assembler.py` -- converts `.asm` files with named labels into a program file the VM can load.
 
 ## How to run
@@ -17,7 +17,22 @@ Write a program in a `.asm` file, assemble it, then run it:
 
 ```
 python3 assembler.py myprogram.asm myprogram.txt
-python3 main.py myprogram.txt
+python3 bsm8.py myprogram.txt
+```
+
+You can also import the VM into your own Python code:
+
+```python
+from bsm8 import BSM8
+
+vm = BSM8()
+vm.load_program('myprogram.txt')
+while True:
+    result = vm.step()
+    if result is True:
+        break
+    elif result is False:
+        break
 ```
 
 ## Example program
