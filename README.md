@@ -11,6 +11,14 @@ It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing v
 - `bsm8.py` -- the VM itself. Can be run directly as a script or imported as a library into other Python programs.
 - `assembler.py` -- converts `.asm` files with named labels into a program file the VM can load.
 
+## Requirements
+
+Python 3 and pygame. Install pygame with:
+
+```
+pip install pygame
+```
+
 ## How to run
 
 Write a program in a `.asm` file, assemble it, then run it:
@@ -33,6 +41,8 @@ while True:
         break
     elif result is False:
         break
+    elif result == 'DSP':
+        pass  # handle display output
 ```
 
 ## Example program
@@ -99,6 +109,7 @@ HALT
 | `STORE n`    | Save the top value to a variable slot                     |
 | `LOAD n`     | Load a variable slot onto the stack                       |
 | `PRINT`      | Print the top value                                       |
+| `DSP`        | Signal the runner to render the display (reads heap slot 0) |
 | `HALT`       | Stop                                                      |
 
 ## Memory layout
@@ -109,6 +120,3 @@ Slots 128 - 191 : heap (variables)
 Slots 192 - 255 : stack
 ```
 
-## Requirements
-
-Just Python 3. No libraries.

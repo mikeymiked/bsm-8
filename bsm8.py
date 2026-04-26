@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import pygame
 
 # =============================================================================
 # OLD VERSION (flat stack, separate heap, unbounded memory)
@@ -130,6 +131,12 @@ class BSM8():
     # last used slot -- the next free slot is always one below where SP is pointing.
     # SP = STACK_START
 
+    def get_heap(self):
+        heap = []
+        for i in self.RAM[self.HEAP_START:self.HEAP_START + 64]:
+            heap.append(i)
+        return heap
+
     # Load the program from the file passed on the command line.
     # Each token (word or number) in the file gets written into RAM one slot at a time,
     # starting at slot 0. Numbers are stored as integers, everything else as strings.
@@ -160,13 +167,9 @@ class BSM8():
 
             # DECODE + EXECUTE -- figure out what the instruction is and do it.
 
-            if instruction == 'PRINT':
-                # Pop the top value off the stack and print it.
-                # SP + 1 is the top of the stack because SP points one below the last pushed value.
-                self.SP += 1
-                print(self.RAM[self.SP])
+            # ── Stack ────────────────────────────────────────────────────────────
 
-            elif instruction == 'PUSH':
+            if instruction == 'PUSH':
                 # Read the argument (the value to push) from the next slot in RAM.
                 # Write it to the current top of the stack, then move SP down.
                 self.RAM[self.SP] = self.RAM[self.PC]
@@ -184,22 +187,7 @@ class BSM8():
                 self.RAM[self.SP] = self.RAM[self.SP + 1]
                 self.SP -= 1
 
-            elif instruction == 'CMP':
-                # POP 2 values and compare them
-                # PUSH 0 if x == y
-                # PUSH 1 if x > y
-                # PUSH 2 if x < y
-                self.SP += 1
-                a = self.RAM[self.SP]
-                self.SP += 1
-                b = self.RAM[self.SP]
-                if a == b:
-                    self.RAM[self.SP] = 0
-                elif a < b:
-                    self.RAM[self.SP] = 1
-                elif a > b:
-                    self.RAM[self.SP] = 2
-                self.SP -= 1
+            # ── Arithmetic ───────────────────────────────────────────────────────
 
             elif instruction == 'ADD':
                 # Pop two values, add them, push the result.
@@ -233,6 +221,23 @@ class BSM8():
                 self.RAM[self.SP] = c
                 self.SP -= 1
 
+            elif instruction == 'CMP':
+                # Pop 2 values and compare them. Push the result:
+                # 0 if equal, 1 if a < b, 2 if a > b.
+                self.SP += 1
+                a = self.RAM[self.SP]
+                self.SP += 1
+                b = self.RAM[self.SP]
+                if a == b:
+                    self.RAM[self.SP] = 0
+                elif a < b:
+                    self.RAM[self.SP] = 1
+                elif a > b:
+                    self.RAM[self.SP] = 2
+                self.SP -= 1
+
+            # ── Control flow ─────────────────────────────────────────────────────
+
             elif instruction == 'JMP':
                 # Unconditional jump. Read the target address from the next slot in RAM
                 # and set PC to it. The next instruction fetched will be at that address.
@@ -244,9 +249,9 @@ class BSM8():
                 # If it is zero, jump to the target address. Otherwise skip past the argument.
                 if self.RAM[self.SP + 1] == 0:
                     n = self.RAM[self.PC]   # read the jump target from the program
-                    self.PC = n        # jump to it
+                    self.PC = n             # jump to it
                 else:
-                    self.PC += 1       # not zero, skip past the argument and continue
+                    self.PC += 1            # not zero, skip past the argument and continue
 
             elif instruction == 'JG0':
                 # Conditional jump. Check the top of the stack (without consuming it).
@@ -268,10 +273,12 @@ class BSM8():
                 else:
                     self.PC += 2        # no match -- skip past both arguments
 
-            elif instruction == 'HALT':
-                # Stop the VM cleanly.
-                # exit(0)
-                return True
+            elif instruction == 'CALL':
+                n = self.RAM[self.PC]        # read the jump target
+                self.PC += 1                 # advance past the argument -- PC is now the return address
+                self.RAM[self.SP] = self.PC  # push the return address onto the stack
+                self.SP -= 1                 # move SP down
+                self.PC = n                  # jump to the subroutine
 
             elif instruction == 'RET':
                 # Return from a subroutine. Pop the return address off the top of the stack
@@ -280,12 +287,11 @@ class BSM8():
                 hop_to = self.RAM[self.SP]
                 self.PC = hop_to
 
-            elif instruction == 'CALL':
-                n = self.RAM[self.PC]   # read the jump target
-                self.PC += 1            # advance past the argument -- PC is now the return address
-                self.RAM[self.SP] = self.PC  # push the return address onto the stack
-                self.SP -= 1            # move SP down
-                self.PC = n             # jump to the subroutine
+            elif instruction == 'HALT':
+                # Stop the VM cleanly.
+                return True
+
+            # ── Memory ───────────────────────────────────────────────────────────
 
             elif instruction == 'STORE':
                 # Save a value from the stack into the heap (variable storage).
@@ -294,8 +300,8 @@ class BSM8():
                 # Example: STORE 0 writes to RAM[128], STORE 1 writes to RAM[129], etc.
                 addr = self.RAM[self.PC]
                 self.PC += 1
-                self.SP += 1           # pop: move SP up to expose the top value
-                data = self.RAM[self.SP]    # read the top value
+                self.SP += 1              # pop: move SP up to expose the top value
+                data = self.RAM[self.SP]  # read the top value
                 self.RAM[self.HEAP_START + addr] = data
 
             elif instruction == 'LOAD':
@@ -304,9 +310,25 @@ class BSM8():
                 # Same HEAP_START offset as STORE.
                 addr = self.RAM[self.PC]
                 data = self.RAM[self.HEAP_START + addr]
-                self.RAM[self.SP] = data    # write to the current top of stack
+                self.RAM[self.SP] = data  # write to the current top of stack
                 self.PC += 1
-                self.SP -= 1           # push: move SP down to account for the new value
+                self.SP -= 1              # push: move SP down to account for the new value
+
+            # ── I/O ──────────────────────────────────────────────────────────────
+
+            elif instruction == 'PRINT':
+                # Pop the top value off the stack and print it.
+                # SP + 1 is the top of the stack because SP points one below the last pushed value.
+                self.SP += 1
+                print(self.RAM[self.SP])
+
+            elif instruction == 'DSP':
+                # Signal the runner to render the display.
+                # The heap (slots 0-63) acts as a framebuffer -- the program writes
+                # values there with STORE before calling DSP, and the runner reads
+                # them and draws to the screen. The VM itself knows nothing about
+                # graphics; returning 'DSP' is just a signal that the runner intercepts.
+                return 'DSP'
 
             else:
                 print(f'Unknown operation: {instruction}')
@@ -315,9 +337,35 @@ class BSM8():
 if __name__ == "__main__":
     vm = BSM8()
     vm.load_program(sys.argv[1])
+    bsm_window = False
     while True:
         result = vm.step()
         if result is True:
             exit(0)
         elif result is False:
             exit(1)
+        elif result == 'DSP':
+            # The program called DSP. Read the heap and render it.
+            if bsm_window is False:
+                # First DSP call -- initialize pygame and open the window once.
+                # Subsequent DSP calls skip this block and reuse the existing window.
+                bsm_window = True
+                BSM_WIDTH = 256
+                BSM_HEIGHT = 256
+                pygame.init()
+                pygame.font.init()
+                window = pygame.display.set_mode((BSM_WIDTH, BSM_HEIGHT))
+                font = pygame.font.SysFont('Arial', 128)
+            # Read the heap fresh each time DSP fires so the display reflects
+            # whatever the program has written since the last call.
+            bsm_heap = vm.get_heap()
+            running = True
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        running = False
+                # Clear the screen, render heap slot 0 as text, then flip to show it.
+                window.fill('white')
+                text_surface = font.render(str(bsm_heap[0]), False, (0, 0, 0))
+                window.blit(text_surface, (0, 0))
+                pygame.display.flip()
