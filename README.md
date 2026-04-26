@@ -4,7 +4,7 @@ A toy 8-bit stack machine I built to learn how CPUs and virtual machines work. I
 
 ## What is it
 
-It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing variables, and 12 instructions. Values wrap around at 255 like a real 8-bit machine. There is also a basic assembler so you can write programs with named labels instead of raw memory addresses.
+It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing variables, and 15 instructions. Values wrap around at 255 like a real 8-bit machine. There is also a basic assembler so you can write programs with named labels instead of raw memory addresses.
 
 ## Files
 
@@ -54,22 +54,51 @@ HALT
 
 Labels like `loop:` and `done:` are resolved by the assembler so you do not have to count memory addresses by hand.
 
+This program prints the larger of two values using `CMP` and `JEQ`:
+
+```
+PUSH 7
+PUSH 10
+CMP
+JM0  equal
+JEQ  2 ten_wins
+seven_wins:
+PUSH 7
+PRINT
+JMP  done
+ten_wins:
+PUSH 10
+PRINT
+JMP  done
+equal:
+PUSH 10
+PRINT
+done:
+HALT
+```
+
+`CMP` pops both values and pushes a result: 0 if equal, 1 if the top was less, 2 if the top was greater. `JEQ 2 ten_wins` then jumps to `ten_wins` if that result is 2, meaning 10 was the larger value.
+
 ## Instructions
 
-| Instruction | What it does                          |
-|-------------|---------------------------------------|
-| `PUSH n`    | Put a value on the stack              |
-| `POP`       | Throw away the top value              |
-| `DUP`       | Copy the top value                    |
-| `ADD`       | Add the top two values                |
-| `SUB`       | Subtract the top two values           |
-| `MUL`       | Multiply the top two values           |
-| `JMP n`     | Jump to a label or address            |
-| `JM0 n`     | Jump if the top of the stack is zero  |
-| `STORE n`   | Save the top value to a variable slot |
-| `LOAD n`    | Load a variable slot onto the stack   |
-| `PRINT`     | Print the top value                   |
-| `HALT`      | Stop                                  |
+| Instruction  | What it does                                              |
+|--------------|-----------------------------------------------------------|
+| `PUSH n`     | Put a value on the stack                                  |
+| `POP`        | Throw away the top value                                  |
+| `DUP`        | Copy the top value                                        |
+| `ADD`        | Add the top two values                                    |
+| `SUB`        | Subtract the top two values                               |
+| `MUL`        | Multiply the top two values                               |
+| `CMP`        | Compare the top two values,                               |
+|              | push 0 (equal), 1 (a < b), or 2 (a > b)                   |
+| `JMP n`      | Jump to a label or address                                |
+| `JM0 n`      | Jump if the top of the stack is zero                      |
+| `JG0 n`      | Jump if the top of the stack is greater than zero         |
+| `JEQ v n`    | Jump to address n if the top of the stack equals v        |
+| `STORE n`    | Save the top value to a variable slot                     |
+| `LOAD n`     | Load a variable slot onto the stack                       |
+| `PRINT`      | Print the top value                                       |
+| `HALT`       | Stop                                                      |
 
 ## Memory layout
 

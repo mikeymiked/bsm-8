@@ -184,6 +184,23 @@ class BSM8():
                 self.RAM[self.SP] = self.RAM[self.SP + 1]
                 self.SP -= 1
 
+            elif instruction == 'CMP':
+                # POP 2 values and compare them
+                # PUSH 0 if x == y
+                # PUSH 1 if x > y
+                # PUSH 2 if x < y
+                self.SP += 1
+                a = self.RAM[self.SP]
+                self.SP += 1
+                b = self.RAM[self.SP]
+                if a == b:
+                    self.RAM[self.SP] = 0
+                elif a < b:
+                    self.RAM[self.SP] = 1
+                elif a > b:
+                    self.RAM[self.SP] = 2
+                self.SP -= 1
+
             elif instruction == 'ADD':
                 # Pop two values, add them, push the result.
                 # We pop by moving SP up (SP += 1) then reading from RAM[SP].
@@ -193,7 +210,7 @@ class BSM8():
                 b = self.RAM[self.SP]   # second popped value (was below the top)
                 c = a + b
                 self.RAM[self.SP] = c   # overwrite the second value's slot with the result
-                self.SP -= 1       # push: move SP back down one to account for the result we just wrote
+                self.SP -= 1            # push: move SP back down one to account for the result we just wrote
 
             elif instruction == 'SUB':
                 # Same pattern as ADD but subtracts. b - a keeps the order intuitive:
@@ -230,6 +247,26 @@ class BSM8():
                     self.PC = n        # jump to it
                 else:
                     self.PC += 1       # not zero, skip past the argument and continue
+
+            elif instruction == 'JG0':
+                # Conditional jump. Check the top of the stack (without consuming it).
+                # If it is greater than zero, jump to the target address. Otherwise skip past the argument.
+                if self.RAM[self.SP + 1] > 0:
+                    n = self.RAM[self.PC]   # read the jump target from the program
+                    self.PC = n             # jump to it
+                else:
+                    self.PC += 1            # not greater than zero, skip past the argument and continue
+
+            elif instruction == 'JEQ':
+                # Conditional jump with a value argument.
+                # Reads two arguments: the value to compare against, and the jump target.
+                # If the top of the stack equals the value, jump to the target. Otherwise skip past both arguments.
+                comp_result = self.RAM[self.PC]      # first argument: value to compare against
+                jump_to     = self.RAM[self.PC + 1]  # second argument: jump target address
+                if self.RAM[self.SP + 1] == comp_result:
+                    self.PC = jump_to   # match -- jump
+                else:
+                    self.PC += 2        # no match -- skip past both arguments
 
             elif instruction == 'HALT':
                 # Stop the VM cleanly.
