@@ -3,7 +3,7 @@
 import sys
 
 labels = {}
-opcodes = ['PUSH', 'POP', 'DUP', 'ADD', 'SUB', 'MUL', 'JMP', 'JM0', 'HALT', 'PRINT', 'STORE', 'LOAD']
+opcodes = ['PUSH', 'POP', 'DUP', 'ADD', 'SUB', 'MUL', 'CMP', 'JMP', 'JM0', 'JG0', 'JEQ', 'CALL', 'RET', 'HALT', 'STORE', 'LOAD', 'PRINT', 'DSP']
 
 with open(sys.argv[1], 'r') as file:
     content = []
