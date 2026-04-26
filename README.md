@@ -89,8 +89,7 @@ HALT
 | `ADD`        | Add the top two values                                    |
 | `SUB`        | Subtract the top two values                               |
 | `MUL`        | Multiply the top two values                               |
-| `CMP`        | Compare the top two values,                               |
-|              | push 0 (equal), 1 (a < b), or 2 (a > b)                   |
+| `CMP`        | Compare the top two values, push 0 (equal), 1 (a < b), or 2 (a > b)                   |
 | `JMP n`      | Jump to a label or address                                |
 | `JM0 n`      | Jump if the top of the stack is zero                      |
 | `JG0 n`      | Jump if the top of the stack is greater than zero         |
