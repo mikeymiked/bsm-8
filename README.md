@@ -4,7 +4,7 @@ A toy 8-bit stack machine I built to learn how CPUs and virtual machines work. I
 
 ## What is it
 
-It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing variables, and 15 instructions. Values wrap around at 255 like a real 8-bit machine. There is also a basic assembler so you can write programs with named labels instead of raw memory addresses.
+It is a made up computer. It has 256 bytes of RAM, a stack, a heap for storing variables, and 17 instructions. Values wrap around at 255 like a real 8-bit machine. There is also a basic assembler so you can write programs with named labels instead of raw memory addresses.
 
 ## Files
 
@@ -94,6 +94,8 @@ HALT
 | `JM0 n`      | Jump if the top of the stack is zero                      |
 | `JG0 n`      | Jump if the top of the stack is greater than zero         |
 | `JEQ v n`    | Jump to address n if the top of the stack equals v        |
+| `CALL n`     | Push the return address and jump to a subroutine          |
+| `RET`        | Pop the return address and jump back to the caller        |
 | `STORE n`    | Save the top value to a variable slot                     |
 | `LOAD n`     | Load a variable slot onto the stack                       |
 | `PRINT`      | Print the top value                                       |

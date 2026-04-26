@@ -273,6 +273,20 @@ class BSM8():
                 # exit(0)
                 return True
 
+            elif instruction == 'RET':
+                # Return from a subroutine. Pop the return address off the top of the stack
+                # and jump to it, resuming execution where CALL left off.
+                self.SP += 1
+                hop_to = self.RAM[self.SP]
+                self.PC = hop_to
+
+            elif instruction == 'CALL':
+                n = self.RAM[self.PC]   # read the jump target
+                self.PC += 1            # advance past the argument -- PC is now the return address
+                self.RAM[self.SP] = self.PC  # push the return address onto the stack
+                self.SP -= 1            # move SP down
+                self.PC = n             # jump to the subroutine
+
             elif instruction == 'STORE':
                 # Save a value from the stack into the heap (variable storage).
                 # The argument tells us which heap slot to write to (0, 1, 2...).
