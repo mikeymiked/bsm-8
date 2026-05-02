@@ -145,10 +145,7 @@ class BSM8():
             content = file.read().split()
             addr = self.PROGRAM_START
             for token in content:
-                if token.isdigit():
-                    self.RAM[addr] = int(token)
-                else:
-                    self.RAM[addr] = str(token)
+                self.RAM[addr] = int(token, 0)
                 addr += 1
 
     # The main loop. This runs forever until HALT is hit or something goes wrong.
@@ -169,27 +166,27 @@ class BSM8():
 
             # ── Stack ────────────────────────────────────────────────────────────
 
-            if instruction == 'PUSH':
+            if instruction == 0x11:
                 # Read the argument (the value to push) from the next slot in RAM.
                 # Write it to the current top of the stack, then move SP down.
                 self.RAM[self.SP] = self.RAM[self.PC]
                 self.PC += 1   # skip past the argument so the next fetch lands on the next instruction
                 self.SP -= 1   # stack grows downward, so pushing moves SP down
 
-            elif instruction == 'POP':
+            elif instruction == 0x12:
                 # Discard the top value. Moving SP up one slot "uncovers" the value below it,
                 # making the previous value the new top. The discarded value is still physically
                 # in RAM but SP has moved past it so nothing can reach it anymore.
                 self.SP += 1
 
-            elif instruction == 'DUP':
+            elif instruction == 0x13:
                 # Read the top value (SP + 1) and push a second copy of it onto the stack.
                 self.RAM[self.SP] = self.RAM[self.SP + 1]
                 self.SP -= 1
 
             # ── Arithmetic ───────────────────────────────────────────────────────
 
-            elif instruction == 'ADD':
+            elif instruction == 0x21:
                 # Pop two values, add them, push the result.
                 # We pop by moving SP up (SP += 1) then reading from RAM[SP].
                 self.SP += 1
@@ -200,7 +197,7 @@ class BSM8():
                 self.RAM[self.SP] = c   # overwrite the second value's slot with the result
                 self.SP -= 1            # push: move SP back down one to account for the result we just wrote
 
-            elif instruction == 'SUB':
+            elif instruction == 0x22:
                 # Same pattern as ADD but subtracts. b - a keeps the order intuitive:
                 # if you pushed 5 then 1, you get 5 - 1 = 4, not 1 - 5 = -4.
                 self.SP += 1
@@ -211,7 +208,7 @@ class BSM8():
                 self.RAM[self.SP] = c
                 self.SP -= 1
 
-            elif instruction == 'MUL':
+            elif instruction == 0x23:
                 # Same pattern as ADD but multiplies.
                 self.SP += 1
                 a = self.RAM[self.SP]
@@ -221,7 +218,7 @@ class BSM8():
                 self.RAM[self.SP] = c
                 self.SP -= 1
 
-            elif instruction == 'CMP':
+            elif instruction == 0x24:
                 # Pop 2 values and compare them. Push the result:
                 # 0 if equal, 1 if a < b, 2 if a > b.
                 self.SP += 1
@@ -238,13 +235,13 @@ class BSM8():
 
             # ── Control flow ─────────────────────────────────────────────────────
 
-            elif instruction == 'JMP':
+            elif instruction == 0x31:
                 # Unconditional jump. Read the target address from the next slot in RAM
                 # and set PC to it. The next instruction fetched will be at that address.
                 n = self.RAM[self.PC]
                 self.PC = n
 
-            elif instruction == 'JM0':
+            elif instruction == 0x32:
                 # Conditional jump. Check the top of the stack (without consuming it).
                 # If it is zero, jump to the target address. Otherwise skip past the argument.
                 if self.RAM[self.SP + 1] == 0:
@@ -253,7 +250,7 @@ class BSM8():
                 else:
                     self.PC += 1            # not zero, skip past the argument and continue
 
-            elif instruction == 'JG0':
+            elif instruction == 0x33:
                 # Conditional jump. Check the top of the stack (without consuming it).
                 # If it is greater than zero, jump to the target address. Otherwise skip past the argument.
                 if self.RAM[self.SP + 1] > 0:
@@ -262,7 +259,7 @@ class BSM8():
                 else:
                     self.PC += 1            # not greater than zero, skip past the argument and continue
 
-            elif instruction == 'JEQ':
+            elif instruction == 0x34:
                 # Conditional jump with a value argument.
                 # Reads two arguments: the value to compare against, and the jump target.
                 # If the top of the stack equals the value, jump to the target. Otherwise skip past both arguments.
@@ -273,27 +270,27 @@ class BSM8():
                 else:
                     self.PC += 2        # no match -- skip past both arguments
 
-            elif instruction == 'CALL':
+            elif instruction == 0x35:
                 n = self.RAM[self.PC]        # read the jump target
                 self.PC += 1                 # advance past the argument -- PC is now the return address
                 self.RAM[self.SP] = self.PC  # push the return address onto the stack
                 self.SP -= 1                 # move SP down
                 self.PC = n                  # jump to the subroutine
 
-            elif instruction == 'RET':
+            elif instruction == 0x36:
                 # Return from a subroutine. Pop the return address off the top of the stack
                 # and jump to it, resuming execution where CALL left off.
                 self.SP += 1
                 hop_to = self.RAM[self.SP]
                 self.PC = hop_to
 
-            elif instruction == 'HALT':
+            elif instruction == 0x37:
                 # Stop the VM cleanly.
                 return True
 
             # ── Memory ───────────────────────────────────────────────────────────
 
-            elif instruction == 'STORE':
+            elif instruction == 0x41:
                 # Save a value from the stack into the heap (variable storage).
                 # The argument tells us which heap slot to write to (0, 1, 2...).
                 # We add HEAP_START to convert that relative slot number into a real RAM address.
@@ -304,7 +301,7 @@ class BSM8():
                 data = self.RAM[self.SP]  # read the top value
                 self.RAM[self.HEAP_START + addr] = data
 
-            elif instruction == 'LOAD':
+            elif instruction == 0x42:
                 # Load a value from the heap onto the stack.
                 # The argument tells us which heap slot to read from (0, 1, 2...).
                 # Same HEAP_START offset as STORE.
@@ -316,13 +313,13 @@ class BSM8():
 
             # ── I/O ──────────────────────────────────────────────────────────────
 
-            elif instruction == 'PRINT':
+            elif instruction == 0x51:
                 # Pop the top value off the stack and print it.
                 # SP + 1 is the top of the stack because SP points one below the last pushed value.
                 self.SP += 1
                 print(self.RAM[self.SP])
 
-            elif instruction == 'DSP':
+            elif instruction == 0x52:
                 # Signal the runner to render the display.
                 # The heap (slots 0-63) acts as a framebuffer -- the program writes
                 # values there with STORE before calling DSP, and the runner reads

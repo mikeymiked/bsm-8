@@ -3,7 +3,14 @@
 import sys
 
 labels = {}
-opcodes = ['PUSH', 'POP', 'DUP', 'ADD', 'SUB', 'MUL', 'CMP', 'JMP', 'JM0', 'JG0', 'JEQ', 'CALL', 'RET', 'HALT', 'STORE', 'LOAD', 'PRINT', 'DSP']
+# opcodes = ['PUSH', 'POP', 'DUP', 'ADD', 'SUB', 'MUL', 'CMP', 'JMP', 'JM0', 'JG0', 'JEQ', 'CALL', 'RET', 'HALT', 'STORE', 'LOAD', 'PRINT', 'DSP']
+opcodes = {
+    'PUSH': 0x11, 'POP': 0x12, 'DUP': 0x13, 
+    'ADD': 0x21, 'SUB': 0x22, 'MUL': 0x23, 'CMP': 0x24,
+    'JMP': 0x31, 'JM0': 0x32, 'JG0': 0x33, 'JEQ': 0x34, 'CALL': 0x35, 'RET': 0x36, 'HALT': 0x37,
+    'STORE': 0x41, 'LOAD': 0x42,
+    'PRINT': 0x51, 'DSP': 0x52
+}
 
 with open(sys.argv[1], 'r') as file:
     content = []
@@ -29,11 +36,14 @@ for token in content:
     elif token.isdigit():
         new_content.append(int(token))
     elif token in opcodes:
-        new_content.append(str(token))
+        new_content.append(opcodes[token])
     else:
         new_content.append(str(token))
 
 
 with open(sys.argv[2], 'w') as file:
     for token in new_content:
-        file.write(str(token) + "\n")
+        if token in opcodes.values():
+            file.write(hex(token) + "\n")
+        else:
+            file.write(str(token) + "\n")
